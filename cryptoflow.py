@@ -37,8 +37,8 @@ class ExternalDeposit(Transaction):
 
 class FlowAnalyser:
     def __init__(self):
-        self.fundings_by_wallet = {}
-        self.swaps_by_wallet = {}
+        self.wallet_fundings = {}
+        self.wallet_swaps = {}
 
     def add_txn(self, txn):
         if not txn.sender:
@@ -58,10 +58,10 @@ class FlowAnalyser:
     def add_funding(self, txn):
         # txn.tx_type=crypto_deposit when sender is external
         # txn.tx_type=transfer when sender is internal
-        if txn.recipient not in self.fundings_by_wallet:
-            self.fundings_by_wallet[txn.recipient] = []
+        if txn.recipient not in self.wallet_fundings:
+            self.wallet_fundings[txn.recipient] = []
 
-        self.fundings_by_wallet[txn.recipient].append(txn)
+        self.wallet_fundings[txn.recipient].append(txn)
         print(f"{txn.date} {txn.sender} sent {txn.recipient} "
               f"{txn.received_amount} {txn.received_currency} "
               f"({txn.tx_type}{txn.optional_id})")
@@ -74,10 +74,10 @@ class FlowAnalyser:
     def add_swap(self, txn):
         wallet = txn.recipient
 
-        if wallet not in self.swaps_by_wallet:
-            self.swaps_by_wallet[wallet] = []
+        if wallet not in self.wallet_swaps:
+            self.wallet_swaps[wallet] = []
 
-        self.swaps_by_wallet[wallet].append(txn)
+        self.wallet_swaps[wallet].append(txn)
         print(f"{txn.date} {wallet}: swapped "
               f"{txn.sent_amount} {txn.sent_currency} "
               f"for {txn.received_amount} {txn.received_currency} "
@@ -120,7 +120,7 @@ class KoinlyFlowAnalyser:
         self.analyser.add_txn(txn)
 
     def report_wallet(self, wallet):
-        pprint(self.analyser.fundings_by_wallet[wallet])
+        pprint(self.analyser.wallet_fundings[wallet])
 
     def report(self):
         self.report_wallet('Bitpanda')
