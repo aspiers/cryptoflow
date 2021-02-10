@@ -6,7 +6,7 @@ import datetime
 import sys
 
 from dataclasses import dataclass
-# from pprint import pprint
+from pprint import pprint
 # from operator import itemgetter
 
 
@@ -119,10 +119,17 @@ class KoinlyFlowAnalyser:
 
         self.analyser.add_txn(txn)
 
+    def report_wallet(self, wallet):
+        pprint(self.analyser.fundings_by_wallet[wallet])
+
+    def report(self):
+        self.report_wallet('Bitpanda')
+
 
 def main():
     koinly = KoinlyFlowAnalyser()
     koinly.analyse_file(sys.argv[1])
+    koinly.report()
 
 
 main()
