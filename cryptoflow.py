@@ -5,6 +5,7 @@ import dateutil.parser
 import datetime
 import sys
 
+from collections import defaultdict
 from dataclasses import dataclass
 from pprint import pprint
 # from operator import itemgetter
@@ -37,8 +38,8 @@ class ExternalDeposit(Transaction):
 
 class FlowAnalyser:
     def __init__(self):
-        self.wallet_fundings = {}
-        self.wallet_swaps = {}
+        self.wallet_fundings = defaultdict(list)
+        self.wallet_swaps = defaultdict(list)
 
     def add_txn(self, txn):
         if not txn.sender:
@@ -58,9 +59,6 @@ class FlowAnalyser:
     def add_funding(self, txn):
         # txn.tx_type=crypto_deposit when sender is external
         # txn.tx_type=transfer when sender is internal
-        if txn.recipient not in self.wallet_fundings:
-            self.wallet_fundings[txn.recipient] = []
-
         self.wallet_fundings[txn.recipient].append(txn)
         print(f"{txn.date} {txn.sender} sent {txn.recipient} "
               f"{txn.received_amount} {txn.received_currency} "
