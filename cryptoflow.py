@@ -61,6 +61,8 @@ class ExternalDeposit(Transaction):
 class FlowAnalyser:
     def __init__(self):
         self.wallet_fundings = defaultdict(list)
+        self.wallet_funding_sources = defaultdict(
+            lambda: defaultdict(list))
         self.wallet_swaps = defaultdict(list)
 
     def add_txn(self, txn):
@@ -82,6 +84,13 @@ class FlowAnalyser:
             (txn.received_currency != txn.sent_currency or
              txn.received_amount != txn.sent_amount)):
             print(f"!!! from {txn.sent_amount} {txn.sent_currency} !!!")
+
+        # Track funding transitively.  Any wallet which funded
+        # txt.sender is also considered a funder of txn.recipient.
+        for src, txns in self.wallet_funding_sources[txn.sender].items():
+            for txn in txns:
+                src_src = txn.sender
+                self.wallet_funding_sources[txn.recipient][src_src].append(txn)
 
     def add_swap(self, txn):
         wallet = txn.recipient
@@ -129,7 +138,8 @@ class KoinlyFlowAnalyser:
         self.analyser.add_txn(txn)
 
     def report_wallet(self, wallet):
-        pprint(self.analyser.wallet_fundings[wallet])
+        for funding in self.analyser.wallet_fundings[wallet]:
+            print(funding)
 
     def report(self):
         self.report_wallet('Bitpanda')
