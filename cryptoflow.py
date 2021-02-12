@@ -23,6 +23,13 @@ class Transaction:
     tx_type: str
     tx_id: str
 
+    def __post_init__(self):
+        if not self.sender:
+            self.sender = "EXTERNAL"
+            assert (self.tx_type == "crypto_deposit" or
+                    self.tx_type == "fiat_deposit"), \
+                f"unexpected external deposit type {self.tx_type}"
+
     @property
     def short_id(self):
         return self.tx_id[0:4] + ".." + self.tx_id[-4:]
@@ -30,6 +37,21 @@ class Transaction:
     @property
     def optional_id(self):
         return f" {self.short_id}" if self.tx_id else ""
+
+    @property
+    def is_swap(self):
+        return self.sender == self.recipient
+
+    def __str__(self):
+        if self.is_swap:
+            return (f"{self.date} {self.sender}: swapped "
+                    f"{self.sent_amount} {self.sent_currency} "
+                    f"for {self.received_amount} {self.received_currency} "
+                    f"({self.tx_type}{self.optional_id})")
+        else:
+            return (f"{self.date} {self.sender} sent {self.recipient} "
+                    f"{self.received_amount} {self.received_currency} "
+                    f"({self.tx_type}{self.optional_id})")
 
 
 class ExternalDeposit(Transaction):
@@ -42,16 +64,10 @@ class FlowAnalyser:
         self.wallet_swaps = defaultdict(list)
 
     def add_txn(self, txn):
-        if not txn.sender:
-            txn.sender = "EXTERNAL"
-            assert (txn.tx_type == "crypto_deposit" or
-                    txn.tx_type == "fiat_deposit"), \
-                f"unexpected external deposit type f{txn.tx_type}"
-
         if not txn.recipient or not txn.received_amount:
             return
 
-        if txn.sender == txn.recipient:
+        if txn.is_swap:
             self.add_swap(txn)
         else:
             self.add_funding(txn)
@@ -60,9 +76,7 @@ class FlowAnalyser:
         # txn.tx_type=crypto_deposit when sender is external
         # txn.tx_type=transfer when sender is internal
         self.wallet_fundings[txn.recipient].append(txn)
-        print(f"{txn.date} {txn.sender} sent {txn.recipient} "
-              f"{txn.received_amount} {txn.received_currency} "
-              f"({txn.tx_type}{txn.optional_id})")
+        print(txn)
 
         if ('deposit' not in txn.tx_type and
             (txn.received_currency != txn.sent_currency or
@@ -76,10 +90,7 @@ class FlowAnalyser:
             self.wallet_swaps[wallet] = []
 
         self.wallet_swaps[wallet].append(txn)
-        print(f"{txn.date} {wallet}: swapped "
-              f"{txn.sent_amount} {txn.sent_currency} "
-              f"for {txn.received_amount} {txn.received_currency} "
-              f"({txn.tx_type}{txn.optional_id})")
+        print(txn)
 
 
 class KoinlyFlowAnalyser:
