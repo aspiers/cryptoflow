@@ -4,6 +4,7 @@ import csv
 import dateutil.parser
 import datetime
 import sys
+# import uuid
 
 from collections import defaultdict
 from dataclasses import dataclass
@@ -42,6 +43,9 @@ class Transaction:
             assert (self.tx_type == "crypto_deposit" or
                     self.tx_type == "fiat_deposit"), \
                 f"unexpected external deposit type {self.tx_type}"
+
+        # if not self.tx_id:
+        #     self.tx_id = str(uuid.uuid4())
 
     @property
     def short_id(self):
