@@ -7,7 +7,11 @@ import sys
 import uuid
 
 from collections import defaultdict
-from sortedcontainers import SortedSet
+
+# type hints not yet added to sortedcontainers
+# https://github.com/grantjenks/python-sortedcontainers/pull/107
+from sortedcontainers import SortedSet  # type: ignore
+
 from dataclasses import dataclass
 from pprint import pprint
 from typing import Optional
@@ -22,7 +26,7 @@ class Transaction:
     sender: str
     sent_amount: float
     sent_currency: str
-    sent_cost_basis: str
+    sent_cost_basis: float
     recipient: str
     received_amount: float
     received_currency: str
@@ -78,7 +82,7 @@ class Transaction:
     def __lt__(self, other) -> int:
         return self.date < other.date
 
-    def __eq__(self, other) -> int:
+    def __eq__(self, other) -> bool:
         return self.tx_id == other.tx_id
 
     def __hash__(self) -> int:
@@ -94,6 +98,10 @@ def create_sorted_txn_set():
 
 
 class FlowAnalyser:
+    wallet_fundings: defaultdict
+    num_indirect_wallet_fundings: dict
+    wallet_swaps: defaultdict
+
     def __init__(self) -> None:
         # Map a wallet to a set of txns directly *or* directly funding it.
         # We ensure the sets are chronologically sorted.
@@ -194,11 +202,11 @@ class KoinlyFlowAnalyser:
         txn = Transaction(
             date=date,
             sender=row['Sending Wallet'],
-            sent_amount=row['Sent Amount'],
+            sent_amount=float(row['Sent Amount']),
             sent_currency=row['Sent Currency'],
-            sent_cost_basis=row['Sent Cost Basis'],
+            sent_cost_basis=float(row['Sent Cost Basis']),
             recipient=row['Receiving Wallet'],
-            received_amount=row['Received Amount'],
+            received_amount=float(row['Received Amount']),
             received_currency=row['Received Currency'],
             received_cost_basis=row['Received Cost Basis'],
             tx_type=row['Type'],
