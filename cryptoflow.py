@@ -76,9 +76,23 @@ class ExternalDeposit(Transaction):
 
 class FlowAnalyser:
     def __init__(self):
+        # Map a wallet to a list of txns directly *or* directly funding it.
+        # These will preserve the order in which they were added.
         self.wallet_fundings = defaultdict(list)
-        self.wallet_funding_sources = defaultdict(
-            lambda: defaultdict(list))
+
+        # Dict which tracks the number of indirect fundings from
+        # wallet A to wallet B already included in B's list of
+        # fundings.  For any given key equal to wallet A's name, then
+        # the value is a dict whose keys are each wallet B which
+        # indirectly funded wallet A, and whose values are the number
+        # of items from self.wallet_fundings[B] which were already
+        # added to A or skipped.  This allows us to transitively
+        # maintain indirect funding transactions in an efficient
+        # manner, avoiding duplicate funding events or the need to
+        # iterate through the txn lists over and over again.
+        self.indirect_wallet_fundings = defaultdict(
+            lambda: defaultdict(lambda: 0))
+
         self.wallet_swaps = defaultdict(list)
 
     def add_txn(self, txn):
@@ -93,20 +107,43 @@ class FlowAnalyser:
     def add_funding(self, txn):
         # txn.tx_type=crypto_deposit when sender is external
         # txn.tx_type=transfer when sender is internal
+        assert txn.recipient != txn.sender
+        print(f"Funding {txn.sender} -> {txn.recipient}:")
+        self.add_indirect_funding(txn)
+        self.add_direct_funding(txn)
+        for t in self.wallet_fundings[txn.recipient]:
+            print(f"   . {t}")
+
+    def add_direct_funding(self, txn):
+        print(f"   + {txn}")
         self.wallet_fundings[txn.recipient].append(txn)
-        print(txn)
 
         if ('deposit' not in txn.tx_type and
             (txn.received_currency != txn.sent_currency or
              txn.received_amount != txn.sent_amount)):
-            print(f"!!! from {txn.sent_amount} {txn.sent_currency} !!!")
+            print(f"!! from {txn.sent_amount} {txn.sent_currency} !!")
 
+    def add_indirect_funding(self, txn):
         # Track funding transitively.  Any wallet which funded
-        # txt.sender is also considered a funder of txn.recipient.
-        for src, txns in self.wallet_funding_sources[txn.sender].items():
-            for txn in txns:
-                src_src = txn.sender
-                self.wallet_funding_sources[txn.recipient][src_src].append(txn)
+        # txn.sender is also considered an indirect funder of
+        # txn.recipient.
+        if txn.sender == EXTERNAL:
+            print("   skipping transitive funding for external sources")
+            return
+
+        count = self.indirect_wallet_fundings[txn.recipient][txn.sender]
+        print(f"   transitively from {txn.sender}, starting at index {count}")
+        for indirect_txn in self.wallet_fundings[txn.sender][count:]:
+            if indirect_txn.sender == txn.recipient:
+                print("      ignoring funding cycle")
+                continue
+            assert indirect_txn.date < txn.date
+            self.wallet_fundings[txn.recipient].append(indirect_txn)
+            print(f"      > {indirect_txn}")
+        self.indirect_wallet_fundings[txn.recipient][txn.sender] = \
+            len(self.wallet_fundings[txn.sender])
+        print("   next will start at index %d" %
+              self.indirect_wallet_fundings[txn.recipient][txn.sender])
 
     def add_swap(self, txn):
         wallet = txn.recipient
@@ -115,7 +152,6 @@ class FlowAnalyser:
             self.wallet_swaps[wallet] = []
 
         self.wallet_swaps[wallet].append(txn)
-        print(txn)
 
 
 class KoinlyFlowAnalyser:
