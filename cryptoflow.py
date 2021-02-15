@@ -137,7 +137,7 @@ class KoinlyFlowAnalyser:
             tx_type=row['Type'],
         )
 
-        # if sender == txn.recipient:
+        # if txn.sender == txn.recipient:
         #     pprint(row)
 
         self.analyser.add_txn(txn)
