@@ -94,7 +94,7 @@ class FlowAnalyser:
         # maintain indirect funding transactions in an efficient
         # manner, avoiding duplicate funding events or the need to
         # iterate through the txn lists over and over again.
-        self.indirect_wallet_fundings = defaultdict(
+        self.num_indirect_wallet_fundings = defaultdict(
             lambda: defaultdict(lambda: 0))
 
         self.wallet_swaps = defaultdict(list)
@@ -135,7 +135,7 @@ class FlowAnalyser:
             print("   skipping transitive funding for external sources")
             return
 
-        count = self.indirect_wallet_fundings[txn.recipient][txn.sender]
+        count = self.num_indirect_wallet_fundings[txn.recipient][txn.sender]
         print(f"   transitively from {txn.sender}, starting at index {count}")
         for indirect_txn in self.wallet_fundings[txn.sender][count:]:
             if indirect_txn.sender == txn.recipient:
@@ -144,10 +144,10 @@ class FlowAnalyser:
             assert indirect_txn.date < txn.date
             self.wallet_fundings[txn.recipient].append(indirect_txn)
             print(f"      > {indirect_txn}")
-        self.indirect_wallet_fundings[txn.recipient][txn.sender] = \
+        self.num_indirect_wallet_fundings[txn.recipient][txn.sender] = \
             len(self.wallet_fundings[txn.sender])
         print("   next will start at index %d" %
-              self.indirect_wallet_fundings[txn.recipient][txn.sender])
+              self.num_indirect_wallet_fundings[txn.recipient][txn.sender])
 
     def add_swap(self, txn):
         wallet = txn.recipient
