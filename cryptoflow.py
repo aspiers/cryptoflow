@@ -9,6 +9,7 @@ import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from pprint import pprint
+from typing import Optional
 # from operator import itemgetter
 
 EXTERNAL = 'EXTERNAL'
@@ -25,19 +26,19 @@ class Transaction:
     received_amount: float
     received_currency: str
     received_cost_basis: str
-    fee_amount: float
-    fee_currency: str
-    fee_value: float
-    gain: float
-    net_value: float
     tx_type: str
     tx_id: str
     tx_src: str
     tx_dest: str
     label: str
     desc: str
+    fee_amount: Optional[float] = None
+    fee_currency: Optional[str] = None
+    fee_value: Optional[float] = None
+    gain: Optional[float] = None
+    net_value: Optional[float] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.sender:
             self.sender = EXTERNAL
             assert (self.tx_type == "crypto_deposit" or
@@ -48,18 +49,18 @@ class Transaction:
         #     self.tx_id = str(uuid.uuid4())
 
     @property
-    def short_id(self):
+    def short_id(self) -> str:
         return self.tx_id[0:4] + ".." + self.tx_id[-4:]
 
     @property
-    def optional_id(self):
+    def optional_id(self) -> str:
         return f" {self.short_id}" if self.tx_id else ""
 
     @property
-    def is_swap(self):
+    def is_swap(self) -> bool:
         return self.sender == self.recipient
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.is_swap:
             return (f"{self.date} swap: {self.sender} "
                     f"{self.sent_amount} {self.sent_currency} "
@@ -70,7 +71,7 @@ class Transaction:
                     f"{self.received_amount} {self.received_currency} "
                     f"({self.tx_type}{self.optional_id})")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"[Tx {self}]"
 
 
@@ -79,7 +80,7 @@ class ExternalDeposit(Transaction):
 
 
 class FlowAnalyser:
-    def __init__(self):
+    def __init__(self) -> None:
         # Map a wallet to a list of txns directly *or* directly funding it.
         # These will preserve the order in which they were added.
         self.wallet_fundings = defaultdict(list)
@@ -99,7 +100,7 @@ class FlowAnalyser:
 
         self.wallet_swaps = defaultdict(list)
 
-    def add_txn(self, txn):
+    def add_txn(self, txn) -> None:
         if not txn.recipient or not txn.received_amount:
             return
 
@@ -108,7 +109,7 @@ class FlowAnalyser:
         else:
             self.add_funding(txn)
 
-    def add_funding(self, txn):
+    def add_funding(self, txn) -> None:
         # txn.tx_type=crypto_deposit when sender is external
         # txn.tx_type=transfer when sender is internal
         assert txn.recipient != txn.sender
@@ -118,7 +119,7 @@ class FlowAnalyser:
         for t in self.wallet_fundings[txn.recipient]:
             print(f"   . {t}")
 
-    def add_direct_funding(self, txn):
+    def add_direct_funding(self, txn) -> None:
         print(f"   + {txn}")
         self.wallet_fundings[txn.recipient].append(txn)
 
@@ -127,7 +128,7 @@ class FlowAnalyser:
              txn.received_amount != txn.sent_amount)):
             print(f"!! from {txn.sent_amount} {txn.sent_currency} !!")
 
-    def add_indirect_funding(self, txn):
+    def add_indirect_funding(self, txn) -> None:
         # Track funding transitively.  Any wallet which funded
         # txn.sender is also considered an indirect funder of
         # txn.recipient.
@@ -149,7 +150,7 @@ class FlowAnalyser:
         print("   next will start at index %d" %
               self.num_indirect_wallet_fundings[txn.recipient][txn.sender])
 
-    def add_swap(self, txn):
+    def add_swap(self, txn) -> None:
         wallet = txn.recipient
 
         if wallet not in self.wallet_swaps:
@@ -159,11 +160,11 @@ class FlowAnalyser:
 
 
 class KoinlyFlowAnalyser:
-    def __init__(self):
+    def __init__(self) -> None:
         self.analyser = FlowAnalyser()
         self.dateparser = dateutil.parser
 
-    def analyse_file(self, filename):
+    def analyse_file(self, filename) -> None:
         with open(filename) as f:
             # Koinly adds a couple of lines before the header
             assert f.readline().startswith("Transaction report")
@@ -174,7 +175,7 @@ class KoinlyFlowAnalyser:
             for row in reader:
                 self.analyse_txn(row)
 
-    def analyse_txn(self, row):
+    def analyse_txn(self, row) -> None:
         date = self.dateparser.parse(row['Date'])
         txn = Transaction(
             date=date,
@@ -199,15 +200,15 @@ class KoinlyFlowAnalyser:
 
         self.analyser.add_txn(txn)
 
-    def report_wallet(self, wallet):
+    def report_wallet(self, wallet) -> None:
         for txn in self.analyser.wallet_fundings[wallet]:
             print(f"   {txn}")
 
-    def report(self):
+    def report(self) -> None:
         self.report_wallet('Bitpanda')
 
 
-def main():
+def main() -> None:
     koinly = KoinlyFlowAnalyser()
     koinly.analyse_file(sys.argv[1])
     koinly.report()

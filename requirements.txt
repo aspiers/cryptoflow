@@ -1,1 +1,3 @@
+mypy
+pyre-check
 python-dateutil
