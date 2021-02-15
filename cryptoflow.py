@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from pprint import pprint
 # from operator import itemgetter
 
+EXTERNAL = 'EXTERNAL'
+
 
 @dataclass
 class Transaction:
@@ -25,7 +27,7 @@ class Transaction:
 
     def __post_init__(self):
         if not self.sender:
-            self.sender = "EXTERNAL"
+            self.sender = EXTERNAL
             assert (self.tx_type == "crypto_deposit" or
                     self.tx_type == "fiat_deposit"), \
                 f"unexpected external deposit type {self.tx_type}"
