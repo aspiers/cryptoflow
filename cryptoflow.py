@@ -5,7 +5,7 @@ import csv
 import dateutil.parser
 import datetime
 import sys
-# import uuid
+import uuid
 
 from collections import defaultdict
 from dataclasses import dataclass
@@ -46,8 +46,8 @@ class Transaction:
                     self.tx_type == "fiat_deposit"), \
                 f"unexpected external deposit type {self.tx_type}"
 
-        # if not self.tx_id:
-        #     self.tx_id = str(uuid.uuid4())
+        if not self.tx_id:
+            self.tx_id = str(uuid.uuid4())
 
     @property
     def short_id(self) -> str:
@@ -77,6 +77,12 @@ class Transaction:
 
     def __lt__(self, other) -> int:
         return self.date < other.date
+
+    def __eq__(self, other) -> int:
+        return self.tx_id == other.tx_id
+
+    def __hash__(self) -> int:
+        return hash(self.tx_id)
 
 
 class ExternalDeposit(Transaction):
