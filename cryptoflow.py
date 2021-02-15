@@ -160,8 +160,8 @@ class KoinlyFlowAnalyser:
         self.analyser.add_txn(txn)
 
     def report_wallet(self, wallet):
-        for funding in self.analyser.wallet_fundings[wallet]:
-            print(funding)
+        for txn in self.analyser.wallet_fundings[wallet]:
+            print(f"   {txn}")
 
     def report(self):
         self.report_wallet('Bitpanda')
