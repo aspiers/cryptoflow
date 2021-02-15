@@ -63,12 +63,12 @@ class Transaction:
 
     def __str__(self) -> str:
         if self.is_swap:
-            return (f"{self.date} swap: {self.sender} "
+            return (f"{self.date} swap[{self.sender}] "
                     f"{self.sent_amount} {self.sent_currency} "
                     f"-> {self.received_amount} {self.received_currency} "
                     f"({self.tx_type}{self.optional_id})")
         else:
-            return (f"{self.date} send: {self.sender} -> {self.recipient} "
+            return (f"{self.date} send[{self.sender} -> {self.recipient}] "
                     f"{self.received_amount} {self.received_currency} "
                     f"({self.tx_type}{self.optional_id})")
 
