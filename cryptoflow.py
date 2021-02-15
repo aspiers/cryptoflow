@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import bisect
 import csv
 import dateutil.parser
 import datetime
@@ -8,6 +7,7 @@ import sys
 import uuid
 
 from collections import defaultdict
+from sortedcontainers import SortedSet
 from dataclasses import dataclass
 from pprint import pprint
 from typing import Optional
@@ -89,11 +89,15 @@ class ExternalDeposit(Transaction):
     pass
 
 
+def create_sorted_txn_set():
+    return SortedSet(key=lambda txn: txn.date)
+
+
 class FlowAnalyser:
     def __init__(self) -> None:
-        # Map a wallet to a list of txns directly *or* directly funding it.
-        # We ensure the lists are chronologically sorted.
-        self.wallet_fundings = defaultdict(list)
+        # Map a wallet to a set of txns directly *or* directly funding it.
+        # We ensure the sets are chronologically sorted.
+        self.wallet_fundings = defaultdict(create_sorted_txn_set)
 
         # Dict which tracks the number of indirect fundings from
         # wallet A to wallet B already included in B's list of
@@ -131,7 +135,7 @@ class FlowAnalyser:
 
     def add_direct_funding(self, txn) -> None:
         print(f"   + {txn}")
-        bisect.insort(self.wallet_fundings[txn.recipient], txn)
+        self.wallet_fundings[txn.recipient].add(txn)
 
         if ('deposit' not in txn.tx_type and
             (txn.received_currency != txn.sent_currency or
@@ -153,8 +157,7 @@ class FlowAnalyser:
                 print("      ignoring funding cycle")
                 continue
             assert indirect_txn.date < txn.date
-            bisect.insort(self.wallet_fundings[txn.recipient],
-                          indirect_txn)
+            self.wallet_fundings[txn.recipient].add(indirect_txn)
             print(f"      > {indirect_txn}")
         self.num_indirect_wallet_fundings[txn.recipient][txn.sender] = \
             len(self.wallet_fundings[txn.sender])
