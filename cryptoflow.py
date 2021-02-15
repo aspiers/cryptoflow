@@ -17,13 +17,24 @@ EXTERNAL = 'EXTERNAL'
 class Transaction:
     date: datetime.datetime
     sender: str
-    sent_amount: str
+    sent_amount: float
     sent_currency: str
+    sent_cost_basis: str
     recipient: str
-    received_amount: str
+    received_amount: float
     received_currency: str
+    received_cost_basis: str
+    fee_amount: float
+    fee_currency: str
+    fee_value: float
+    gain: float
+    net_value: float
     tx_type: str
     tx_id: str
+    tx_src: str
+    tx_dest: str
+    label: str
+    desc: str
 
     def __post_init__(self):
         if not self.sender:
@@ -130,11 +141,17 @@ class KoinlyFlowAnalyser:
             sender=row['Sending Wallet'],
             sent_amount=row['Sent Amount'],
             sent_currency=row['Sent Currency'],
+            sent_cost_basis=row['Sent Cost Basis'],
             recipient=row['Receiving Wallet'],
             received_amount=row['Received Amount'],
             received_currency=row['Received Currency'],
-            tx_id=row['TxHash'],
+            received_cost_basis=row['Received Cost Basis'],
             tx_type=row['Type'],
+            tx_id=row['TxHash'],
+            tx_src=row['TxSrc'],
+            tx_dest=row['TxDest'],
+            label=row['Label'],
+            desc=row['Description'],
         )
 
         # if txn.sender == txn.recipient:
