@@ -130,4 +130,3 @@ class FlowAnalyser:
             len(self.wallet_fundings[txn.sender][txn.sent_currency])
         self.num_indirect_wallet_fundings[src][dst] = new_index
         print(f"   next will start at index {new_index}")
-
