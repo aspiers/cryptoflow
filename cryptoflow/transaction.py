@@ -57,14 +57,19 @@ class Transaction:
     def is_swap(self) -> bool:
         return self.sender == self.recipient
 
+    @property
+    def date_ms(self) -> str:
+        # return self.date.isoformat(timespec='milliseconds')
+        return self.date.strftime('%y-%m-%dT%H:%M:%S.%f')[0:-3]
+
     def __str__(self) -> str:
         if self.is_swap:
-            return (f"{self.date} swap[{self.sender}] "
+            return (f"{self.date_ms} swap[{self.sender}] "
                     f"{self.sent_amount} {self.sent_currency} "
                     f"-> {self.received_amount} {self.received_currency} "
                     f"({self.tx_type}{self.optional_id})")
         else:
-            return (f"{self.date} send[{self.sender} -> {self.recipient}] "
+            return (f"{self.date_ms} send[{self.sender} -> {self.recipient}] "
                     f"{self.received_amount} {self.received_currency} "
                     f"({self.tx_type}{self.optional_id})")
 

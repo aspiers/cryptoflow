@@ -2,6 +2,7 @@
 
 import csv
 import dateutil.parser
+import datetime
 import sys
 from typing import Dict, Optional
 
@@ -15,6 +16,7 @@ class KoinlyFlowAnalyser:
     def __init__(self) -> None:
         self.analyser = FlowAnalyser()
         self.dateparser = dateutil.parser
+        self.last_date: Optional[datetime.datetime] = None
 
     def analyse_file(self, filename: str) -> None:
         with open(filename) as f:
@@ -30,6 +32,13 @@ class KoinlyFlowAnalyser:
 
     def analyse_txn(self, row: Dict[str, str]) -> None:
         date = self.dateparser.parse(row['Date'])
+
+        # Preserve file ordering even when timestamps are identical
+        if date == self.last_date:
+            date += datetime.timedelta(milliseconds=1)
+            # print("   >> shifted to " +
+            #       date.isoformat(timespec='milliseconds'))
+        self.last_date = date
 
         def safefloat(s: str) -> Optional[float]:
             return float(s) if s else None
