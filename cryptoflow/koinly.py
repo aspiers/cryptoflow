@@ -33,13 +33,16 @@ class KoinlyFlowAnalyser:
         def safefloat(s: str) -> Optional[float]:
             return float(s) if s else None
 
+        def safewallet(s: str) -> Optional[Wallet]:
+            return Wallet.named(s) if s else None
+
         txn = Transaction(
             date=date,
-            sender=Wallet(row['Sending Wallet']),
+            sender=safewallet(row['Sending Wallet']),
             sent_amount=safefloat(row['Sent Amount']),
             sent_currency=Coin(row['Sent Currency']),
             sent_cost_basis=safefloat(row['Sent Cost Basis']),
-            recipient=Wallet(row['Receiving Wallet']),
+            recipient=safewallet(row['Receiving Wallet']),
             received_amount=safefloat(row['Received Amount']),
             received_currency=Coin(row['Received Currency']),
             received_cost_basis=safefloat(row['Received Cost Basis']),
@@ -65,7 +68,7 @@ class KoinlyFlowAnalyser:
                 print(f"      {t}")
 
     def report(self) -> None:
-        self.report_wallet(Wallet('Bitpanda'))
+        self.report_wallet(Wallet.named('Bitpanda'))
 
 
 def main() -> None:

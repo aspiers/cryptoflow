@@ -65,6 +65,20 @@ class FlowAnalyser:
         self.check_txn(txn)
         self.add_funding(txn)
 
+    def update_wallets(self, txn: Transaction) -> None:
+        src = txn.sender
+        if not src.is_external:
+            src_currency = txn.sent_currency
+            src.withdraw(src_currency, txn.sent_amount)
+            print(f"   = {src} {src_currency} balance now "
+                  f"{src[src_currency]} {src_currency}")
+
+        dst = txn.recipient
+        dst_currency = txn.received_currency
+        dst.deposit(dst_currency, txn.received_amount)
+        print(f"   = {dst} {dst_currency} balance now "
+              f"{dst[dst_currency]} {dst_currency}")
+
     def check_txn(self, txn: Transaction):
         if txn.is_swap:
             assert txn.tx_type in ('buy', 'sell', 'exchange'), txn
@@ -81,6 +95,8 @@ class FlowAnalyser:
         else:
             print(f"Funding {txn.recipient} with " +
                   txn.received_currency)
+        print(f"   + {txn}")
+        self.update_wallets(txn)
         self.add_direct_funding(txn)
         self.add_indirect_funding(txn)
         fundings: SortedSet[Transaction] = \
@@ -90,7 +106,6 @@ class FlowAnalyser:
             print(f"   . {t}")
 
     def add_direct_funding(self, txn: Transaction) -> None:
-        print(f"   + {txn}")
         self.wallet_fundings[txn.recipient][txn.received_currency].add(txn)
 
     def add_indirect_funding(self, txn: Transaction) -> None:
