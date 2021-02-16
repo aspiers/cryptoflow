@@ -26,6 +26,7 @@ class KoinlyFlowAnalyser:
 
             for row in reader:
                 self.analyse_txn(row)
+            print("\n")
 
     def analyse_txn(self, row: Dict[str, str]) -> None:
         date = self.dateparser.parse(row['Date'])
@@ -63,7 +64,8 @@ class KoinlyFlowAnalyser:
         print(f"Fundings for {wallet}:")
         wallet_fundings = self.analyser.wallet_fundings[wallet]
         for coin, txns in wallet_fundings.items():
-            print(f"   {coin}")
+            balance = wallet[coin]
+            print(f"   {balance} {coin}")
             for t in txns:
                 print(f"      {t}")
 
