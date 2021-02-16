@@ -35,7 +35,7 @@ class Wallet:
         if self.is_external:
             return
         balance = self.balances[coin]
-        if amount > balance:
+        if amount - balance > 1e-8:
             abort(f"tried to withdraw {amount} {coin} from "
                   f"{self.name} but only {balance} {coin} present")
         self.balances[coin] -= amount
