@@ -33,11 +33,10 @@ class Transaction:
     net_value: Optional[float] = None
 
     def __post_init__(self) -> None:
-        if not self.sender:
+        if self.sender == EXTERNAL:
             assert (self.tx_type == "crypto_deposit" or
                     self.tx_type == "fiat_deposit"), \
                 f"unexpected external deposit type {self.tx_type}"
-            self.sender = EXTERNAL
             assert not self.sent_currency
             assert self.received_currency
             self.sent_currency = self.received_currency

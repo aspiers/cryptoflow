@@ -8,7 +8,7 @@ from typing import DefaultDict, Tuple
 # https://github.com/grantjenks/python-sortedcontainers/pull/107
 from sortedcontainers import SortedSet  # type: ignore
 
-from wallet import Wallet, EXTERNAL
+from wallet import Wallet
 from coin import Coin
 from transaction import Transaction
 
@@ -67,7 +67,7 @@ class FlowAnalyser:
 
     def update_wallets(self, txn: Transaction) -> None:
         src = txn.sender
-        if not src.is_external:
+        if not src.is_external and txn.sent_amount is not None:
             src_currency = txn.sent_currency
             src.withdraw(src_currency, txn.sent_amount)
             print(f"   = {src} {src_currency} balance now "
@@ -75,9 +75,10 @@ class FlowAnalyser:
 
         dst = txn.recipient
         dst_currency = txn.received_currency
-        dst.deposit(dst_currency, txn.received_amount)
-        print(f"   = {dst} {dst_currency} balance now "
-              f"{dst[dst_currency]} {dst_currency}")
+        if txn.received_amount is not None:
+            dst.deposit(dst_currency, txn.received_amount)
+            print(f"   = {dst} {dst_currency} balance now "
+                  f"{dst[dst_currency]} {dst_currency}")
 
     def check_txn(self, txn: Transaction):
         if txn.is_swap:
@@ -112,7 +113,7 @@ class FlowAnalyser:
         # Track funding transitively.  Any wallet which funded
         # txn.sender is also considered an indirect funder of
         # txn.recipient.
-        if txn.sender == EXTERNAL:
+        if txn.sender.is_external:
             print("   skipping transitive funding for external sources")
             return
 

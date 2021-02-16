@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
-from __future__ import annotations
+# This doesn't help pytype understand forward references :-(
+# from __future__ import annotations
+# so use a string instead:
+# https://google.github.io/pytype/faq.html#how-do-i-reference-a-type-from-within-its-definition-forward-references
 
 from collections import defaultdict
 from typing import Dict, DefaultDict
@@ -12,7 +15,7 @@ _EXTERNAL = 'EXTERNAL'
 
 
 class Wallet:
-    wallets: Dict[str, Wallet] = {}
+    wallets: Dict[str, 'Wallet'] = {}
 
     name: str
     balances: DefaultDict[Coin, float]

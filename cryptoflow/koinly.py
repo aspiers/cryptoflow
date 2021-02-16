@@ -7,7 +7,7 @@ import sys
 from typing import Dict, Optional
 
 from analyser import FlowAnalyser
-from wallet import Wallet
+from wallet import Wallet, EXTERNAL
 from coin import Coin
 from transaction import Transaction
 
@@ -43,8 +43,8 @@ class KoinlyFlowAnalyser:
         def safefloat(s: str) -> Optional[float]:
             return float(s) if s else None
 
-        def safewallet(s: str) -> Optional[Wallet]:
-            return Wallet.named(s) if s else None
+        def safewallet(s: str) -> Wallet:
+            return Wallet.named(s) if s else EXTERNAL
 
         txn = Transaction(
             date=date,
