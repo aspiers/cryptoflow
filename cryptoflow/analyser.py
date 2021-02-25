@@ -80,6 +80,12 @@ class FlowAnalyser:
             print(f"   = {dst} {dst_currency} balance now "
                   f"{dst[dst_currency]} {dst_currency}")
 
+        fee_currency = txn.fee_currency
+        if txn.fee_amount is not None:
+            src.withdraw(fee_currency, txn.fee_amount)
+            print(f"   = {src} {fee_currency} balance now "
+                  f"{src[fee_currency]} {fee_currency} after fee")
+
     def check_txn(self, txn: Transaction):
         if txn.is_swap:
             assert txn.tx_type in ('buy', 'sell', 'exchange'), txn

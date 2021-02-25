@@ -68,14 +68,23 @@ class Transaction:
 
     def __str__(self) -> str:
         if self.is_swap:
-            return (f"{self.date_ms} swap[{self.sender}] "
-                    f"{self.sent_amount} {self.sent_currency} "
-                    f"-> {self.received_amount} {self.received_currency} "
-                    f"({self.tx_type}{self.optional_id})")
+            s = (f"{self.date_ms} swap[{self.sender}] "
+                 f"{self.sent_amount} {self.sent_currency} "
+                 f"-> {self.received_amount} {self.received_currency} ")
         else:
-            return (f"{self.date_ms} send[{self.sender} -> {self.recipient}] "
-                    f"{self.received_amount} {self.received_currency} "
-                    f"({self.tx_type}{self.optional_id})")
+            s = (f"{self.date_ms} send[{self.sender} -> {self.recipient}] "
+                 f"{self.received_amount} {self.received_currency} ")
+
+        fee = ""
+        if (self.fee_amount or 0) > 0:
+            fee = f", fee {self.fee_amount} {self.fee_currency}"
+
+        s += f"({self.tx_type}{self.optional_id}{fee})"
+
+        if self.desc:
+            s += ' ' + self.desc
+
+        return s
 
     def __repr__(self) -> str:
         return f"[Tx {self}]"

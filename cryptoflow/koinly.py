@@ -62,6 +62,8 @@ class KoinlyFlowAnalyser:
             received_amount=safefloat(row['Received Amount']),
             received_currency=Coin(row['Received Currency']),
             received_cost_basis=safefloat(row['Received Cost Basis']),
+            fee_amount=safefloat(row['Fee Amount']),
+            fee_currency=Coin(row['Fee Currency']),
             tx_src=row['TxSrc'],
             tx_dest=row['TxDest'],
             tx_id=row['TxHash'],
