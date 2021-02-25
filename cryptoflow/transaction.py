@@ -59,7 +59,7 @@ class Transaction:
     @property
     def date_ms(self) -> str:
         # return self.date.isoformat(timespec='milliseconds')
-        return self.date.strftime('%y-%m-%dT%H:%M:%S.%f')[0:-3]
+        return self.date.strftime('%Y-%m-%dT%H:%M:%S.%f')[0:-3]
 
     def __str__(self) -> str:
         if self.is_swap:
