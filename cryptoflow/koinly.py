@@ -52,6 +52,8 @@ class KoinlyFlowAnalyser:
 
         txn = Transaction(
             date=date,
+            tx_type=row['Type'],
+            label=row['Label'],
             sender=safewallet(row['Sending Wallet']),
             sent_amount=safefloat(row['Sent Amount']),
             sent_currency=Coin(row['Sent Currency']),
@@ -60,11 +62,9 @@ class KoinlyFlowAnalyser:
             received_amount=safefloat(row['Received Amount']),
             received_currency=Coin(row['Received Currency']),
             received_cost_basis=safefloat(row['Received Cost Basis']),
-            tx_type=row['Type'],
-            tx_id=row['TxHash'],
             tx_src=row['TxSrc'],
             tx_dest=row['TxDest'],
-            label=row['Label'],
+            tx_id=row['TxHash'],
             desc=row['Description'],
         )
 
