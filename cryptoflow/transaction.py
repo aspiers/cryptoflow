@@ -46,7 +46,12 @@ class Transaction:
 
     @property
     def short_id(self) -> str:
-        return self.tx_id[0:4] + ".." + self.tx_id[-4:]
+        tx_id = self.tx_id
+        if tx_id.startswith('0x'):
+            tx_id = tx_id[2:]
+        if len(tx_id) in (24, 36, 64):
+            return tx_id[0:4] + ".." + tx_id[-4:]
+        return tx_id
 
     @property
     def optional_id(self) -> str:
