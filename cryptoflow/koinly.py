@@ -46,13 +46,17 @@ class KoinlyFlowAnalyser:
         def safewallet(s: str) -> Wallet:
             return Wallet.named(s) if s else EXTERNAL
 
+        recipient_name = row['Receiving Wallet']
+        if row['Type'] == 'transfer' and row['Label'] == 'to_pool':
+            recipient_name = recipient_name + ' pool'
+
         txn = Transaction(
             date=date,
             sender=safewallet(row['Sending Wallet']),
             sent_amount=safefloat(row['Sent Amount']),
             sent_currency=Coin(row['Sent Currency']),
             sent_cost_basis=safefloat(row['Sent Cost Basis']),
-            recipient=safewallet(row['Receiving Wallet']),
+            recipient=safewallet(recipient_name),
             received_amount=safefloat(row['Received Amount']),
             received_currency=Coin(row['Received Currency']),
             received_cost_basis=safefloat(row['Received Cost Basis']),
