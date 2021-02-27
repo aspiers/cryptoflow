@@ -70,21 +70,32 @@ class FlowAnalyser:
         if not src.is_external and txn.sent_amount is not None:
             src_currency = txn.sent_currency
             src.withdraw(src_currency, txn.sent_amount)
-            print(f"   = {src} {src_currency} balance now "
-                  f"{src[src_currency]} {src_currency}")
+            self.report_balance(src, src_currency, " after sending")
 
         dst = txn.recipient
         dst_currency = txn.received_currency
         if txn.received_amount is not None:
             dst.deposit(dst_currency, txn.received_amount)
-            print(f"   = {dst} {dst_currency} balance now "
-                  f"{dst[dst_currency]} {dst_currency}")
+            self.report_balance(dst, dst_currency, " after receiving")
 
         fee_currency = txn.fee_currency
         if txn.fee_amount is not None:
             src.withdraw(fee_currency, txn.fee_amount)
-            print(f"   = {src} {fee_currency} balance now "
-                  f"{src[fee_currency]} {fee_currency} after fee")
+            self.report_balance(src, fee_currency, " after fee")
+
+    def report_balance(self, wallet: Wallet, coin: Coin,
+                       extra="") -> None:
+        # Avoid balances like 0.00009062999999999433 BTC
+        # which are just artifacts of floating point storage.
+        # This rough approach is one decent enough option:
+        #
+        # balance = f"{wallet[coin]:.11f}".rstrip('0').rstrip('.')
+        #
+        # numpy.format_float_positional is another potential option.
+        # However for now, just mimic Koinly's formatting:
+        balance = f"{wallet[coin]:.8f}"
+        print(f"   = {wallet} {coin} balance now "
+              f"{balance} {coin}{extra}")
 
     def check_txn(self, txn: Transaction):
         if txn.is_swap:
