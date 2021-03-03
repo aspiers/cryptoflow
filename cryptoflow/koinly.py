@@ -84,8 +84,36 @@ class KoinlyFlowAnalyser:
             for t in txns:
                 print(f"      {t}")
 
+    def report_wallet_csv(self, wallet: Wallet) -> None:
+        fields = [
+            'date',
+            'tx_type',
+            'label',
+            'sender',
+            'sent_amount',
+            'sent_currency',
+            'recipient',
+            'received_amount',
+            'received_currency',
+            'fee_amount',
+            'fee_currency',
+            'tx_src',
+            'tx_dest',
+            'tx_id',
+        ]
+        writer = csv.writer(sys.stdout)
+        writer.writerow(fields)
+        wallet_fundings = self.analyser.wallet_fundings[wallet]
+        fundings = set()
+        for coin, txns in wallet_fundings.items():
+            fundings.update(txns)
+
+        for funding in fundings:
+            values = [getattr(funding, field) for field in fields]
+            writer.writerow(values)
+
     def report(self) -> None:
-        self.report_wallet(Wallet.named('Bitpanda'))
+        self.report_wallet_csv(Wallet.named('Bitpanda'))
 
 
 def main() -> None:
