@@ -9,7 +9,7 @@ from collections import defaultdict
 from typing import Dict, DefaultDict
 
 from coin import Coin
-from utils import abort
+from utils import warn
 
 _EXTERNAL = 'EXTERNAL'
 
@@ -39,9 +39,11 @@ class Wallet:
             return
         balance = self.balances[coin]
         if amount - balance > 1e-8:
-            abort(f"tried to withdraw {amount} {coin} from "
-                  f"{self.name} but only {balance} {coin} present")
-        self.balances[coin] -= amount
+            warn(f"Tried to withdraw {amount} {coin} from "
+                 f"{self.name} but only {balance} {coin} present")
+            self.balances[coin] = 0
+        else:
+            self.balances[coin] -= amount
 
     def __str__(self) -> str:
         return self.name
