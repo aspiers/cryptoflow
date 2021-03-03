@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 # from pprint import pprint
+import sys
 from typing import DefaultDict, Tuple
 
 # type hints not yet added to sortedcontainers
@@ -11,6 +12,7 @@ from sortedcontainers import SortedSet  # type: ignore
 from wallet import Wallet
 from coin import Coin
 from transaction import Transaction
+from protocols import SupportsWrite
 
 
 def create_sorted_txn_set():
@@ -49,17 +51,25 @@ class FlowAnalyser:
         ]
     ]
 
-    def __init__(self) -> None:
+    output: SupportsWrite
+
+    def __init__(self, output: SupportsWrite = sys.stdout) -> None:
         self.wallet_fundings = defaultdict(
             lambda: defaultdict(create_sorted_txn_set))
 
         self.num_indirect_wallet_fundings = defaultdict(
             lambda: defaultdict(lambda: 0))
 
+        self.output = output
+
+    def write(self, s: str) -> None:
+        if self.output:
+            self.output.write(s + "\n")
+
     def add_txn(self, txn: Transaction) -> None:
         if not txn.recipient or not txn.received_amount:
             assert 'withdrawal' in txn.tx_type
-            # print(f"!! Skipping {txn}")
+            # self.write(f"!! Skipping {txn}")
             return
 
         self.check_txn(txn)
@@ -98,8 +108,8 @@ class FlowAnalyser:
         # numpy.format_float_positional is another potential option.
         # However for now, just mimic Koinly's formatting:
         balance = f"{wallet[coin]:.8f}"
-        print(f"   = {wallet} {coin} balance now "
-              f"{balance} {coin}{extra}")
+        self.write(f"   = {wallet} {coin} balance now "
+                   f"{balance} {coin}{extra}")
 
     def check_txn(self, txn: Transaction):
         if txn.is_swap:
@@ -112,20 +122,20 @@ class FlowAnalyser:
         # txn.tx_type=crypto_deposit when sender is external
         # txn.tx_type=transfer when sender is internal
         if txn.is_swap:
-            print(f"Swapping in {txn.sender}: "
-                  f"{txn.sent_currency} -> {txn.received_currency}:")
+            self.write(f"Swapping in {txn.sender}: "
+                       f"{txn.sent_currency} -> {txn.received_currency}:")
         else:
-            print(f"Funding {txn.recipient} with " +
-                  txn.received_currency)
-        print(f"   + {txn}")
+            self.write(f"Funding {txn.recipient} with " +
+                       txn.received_currency)
+        self.write(f"   + {txn}")
         self.update_wallets(txn)
         self.add_direct_funding(txn)
         self.add_indirect_funding(txn)
         fundings: SortedSet[Transaction] = \
             self.wallet_fundings[txn.recipient][txn.received_currency]
         t: Transaction
-        for t in fundings:
-            print(f"   . {t}")
+        # for t in fundings:
+        #     self.write(f"   . {t}")
 
     def add_direct_funding(self, txn: Transaction) -> None:
         self.wallet_fundings[txn.recipient][txn.received_currency].add(txn)
@@ -135,15 +145,15 @@ class FlowAnalyser:
         # txn.sender is also considered an indirect funder of
         # txn.recipient.
         if txn.sender.is_external:
-            print("   skipping transitive funding for external sources")
+            self.write("   skipping transitive funding for external sources")
             return
 
         src = (txn.recipient, txn.received_currency)
         dst = (txn.sender, txn.sent_currency)
         count: int = self.num_indirect_wallet_fundings[src][dst]
-        print(f"   transitively funding from funders of "
-              f"{txn.sender} with {txn.sent_currency}, "
-              f"starting at index {count}")
+        self.write(f"   transitively funding from funders of "
+                   f"{txn.sender} with {txn.sent_currency}, "
+                   f"starting at index {count}")
         fundings: SortedSet[Transaction] = \
             self.wallet_fundings[txn.sender][txn.sent_currency]
         new_indirect_txns: SortedSet[Transaction] = fundings[count:]
@@ -151,7 +161,7 @@ class FlowAnalyser:
             if (indirect_txn.sender == txn.recipient and
                     indirect_txn.sent_currency ==
                     txn.received_currency):
-                print("      ignoring funding cycle")
+                self.write("      ignoring funding cycle")
                 continue
 
             # Note: could have transactions in the same second, e.g.
@@ -161,9 +171,9 @@ class FlowAnalyser:
 
             self.wallet_fundings[txn.recipient][
                 txn.received_currency].add(indirect_txn)
-            print(f"      > {indirect_txn}")
+            # self.write(f"      > {indirect_txn}")
 
         new_index = \
             len(self.wallet_fundings[txn.sender][txn.sent_currency])
         self.num_indirect_wallet_fundings[src][dst] = new_index
-        print(f"   next will start at index {new_index}")
+        self.write(f"   next will start at index {new_index}")

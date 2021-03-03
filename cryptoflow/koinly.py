@@ -10,13 +10,23 @@ from analyser import FlowAnalyser
 from wallet import Wallet, EXTERNAL
 from coin import Coin
 from transaction import Transaction
+from protocols import SupportsWrite
 
 
 class KoinlyFlowAnalyser:
-    def __init__(self) -> None:
-        self.analyser = FlowAnalyser()
+    analyser: FlowAnalyser
+    last_date: Optional[datetime.datetime]
+    output: SupportsWrite
+
+    def __init__(self, output=sys.stdout) -> None:
+        self.analyser = FlowAnalyser(output)
         self.dateparser = dateutil.parser
-        self.last_date: Optional[datetime.datetime] = None
+        self.last_date = None
+        self.output = output
+
+    def write(self, s: str) -> None:
+        if self.output:
+            self.output.write(s)
 
     def analyse_file(self, filename: str) -> None:
         with open(filename) as f:
@@ -28,7 +38,7 @@ class KoinlyFlowAnalyser:
 
             for row in reader:
                 self.analyse_txn(row)
-            print("\n")
+            self.write("\n")
 
     def analyse_txn(self, row: Dict[str, str]) -> None:
         date = self.dateparser.parse(row['Date'])
@@ -36,7 +46,7 @@ class KoinlyFlowAnalyser:
         # Preserve file ordering even when timestamps are identical
         if date == self.last_date:
             date += datetime.timedelta(milliseconds=1)
-            # print("   >> shifted to " +
+            # self.write("   >> shifted to " +
             #       date.isoformat(timespec='milliseconds'))
         self.last_date = date
 
@@ -76,13 +86,13 @@ class KoinlyFlowAnalyser:
         self.analyser.add_txn(txn)
 
     def report_wallet(self, wallet: Wallet) -> None:
-        print(f"Fundings for {wallet}:")
+        self.write(f"Fundings for {wallet}:")
         wallet_fundings = self.analyser.wallet_fundings[wallet]
         for coin, txns in wallet_fundings.items():
             balance = wallet[coin]
-            print(f"   {balance} {coin}")
+            self.write(f"   {balance} {coin}")
             for t in txns:
-                print(f"      {t}")
+                self.write(f"      {t}")
 
     def report_wallet_csv(self, wallet: Wallet) -> None:
         fields = [
@@ -117,7 +127,7 @@ class KoinlyFlowAnalyser:
 
 
 def main() -> None:
-    koinly = KoinlyFlowAnalyser()
+    koinly = KoinlyFlowAnalyser(output=None)
     koinly.analyse_file(sys.argv[1])
     koinly.report()
 
