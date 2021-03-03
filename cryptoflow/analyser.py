@@ -67,20 +67,24 @@ class FlowAnalyser:
 
     def update_wallets(self, txn: Transaction) -> None:
         src = txn.sender
-        if not src.is_external and txn.sent_amount is not None:
-            src_currency = txn.sent_currency
-            src.withdraw(src_currency, txn.sent_amount)
+        src_currency = txn.sent_currency
+        src_amount = txn.sent_amount
+        if (not src.is_external and src_amount is not None and
+                src_currency is not None):
+            src.withdraw(src_currency, src_amount)
             self.report_balance(src, src_currency, " after sending")
 
         dst = txn.recipient
         dst_currency = txn.received_currency
-        if txn.received_amount is not None:
-            dst.deposit(dst_currency, txn.received_amount)
+        dst_amount = txn.received_amount
+        if dst_amount is not None:
+            dst.deposit(dst_currency, dst_amount)
             self.report_balance(dst, dst_currency, " after receiving")
 
         fee_currency = txn.fee_currency
-        if txn.fee_amount is not None:
-            src.withdraw(fee_currency, txn.fee_amount)
+        fee_amount = txn.fee_amount
+        if fee_amount is not None and fee_currency is not None:
+            src.withdraw(fee_currency, fee_amount)
             self.report_balance(src, fee_currency, " after fee")
 
     def report_balance(self, wallet: Wallet, coin: Coin,
